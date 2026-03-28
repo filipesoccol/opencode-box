@@ -1,14 +1,24 @@
-FROM node:20-slim
+FROM node:trixie
 
 # Install dependencies in one layer
-RUN apt-get update && apt-get install -y \
+RUN apt update && apt install -y \
     git \
     bash \
     openssh-client \
     curl \
     ca-certificates \
     file \
+    build-essential \
+    cmake \
+    python3 python3-pip \
+    golang-1.24 \
+    lsof \
+    net-tools \
+    curl \
+    tcpdump \
     && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="$PATH:/usr/lib/go-1.24/bin"
 
 # Create workspace directory with proper ownership
 RUN mkdir -p /workspace && chown node:node /workspace

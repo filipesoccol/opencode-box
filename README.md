@@ -32,6 +32,125 @@ npm install -g opencode-box
 - 🌿 Checkout to the current branch from your host machine
 - 🤖 Start OpenCode in the isolated environment
 
+## 🎛 Workspace Modes
+
+OpenCode Box supports three different workspace modes to suit your needs:
+
+### `--gitcheckout` (Default)
+**Isolated development environment** - Clones repository inside container
+```bash
+opencodebox --gitcheckout
+```
+- ✅ Interactive terminal session
+- 🔐 SSH credentials required
+- 📦 Dedicated workspace volume
+- 🔄 Automatic cleanup on exit
+
+### `--mount-ro`
+**Read-only workspace mounting** - Direct access to your current files
+```bash
+opencodebox --mount-ro
+```
+- 🔍 Code examination only
+- 🚫 No file modifications allowed
+- ⚡ No SSH requirements
+- 📁 Direct workspace mounting
+
+### `--mount-rw`
+**Read-write workspace mounting** - Edit files directly in your workspace
+```bash
+opencodebox --mount-rw
+```
+- ✏️ Direct file editing
+- 💾 Changes saved to host filesystem
+- ⚡ No SSH requirements
+- 📁 Direct workspace mounting
+
+## 🛠️ Advanced Usage
+
+### Container Management
+
+**Interactive Shell Access**
+Get a shell in an existing gitcheckout container for debugging:
+```bash
+opencodebox --gitcheckout --it
+```
+
+**Force Image Rebuild**
+Update OpenCode and dependencies to latest versions:
+```bash
+opencodebox --gitcheckout --rebuild
+```
+
+**Multiple Mount Instances**
+Run multiple containers with different workspaces:
+```bash
+# Terminal 1
+cd ~/project-a
+opencodebox --mount-ro
+
+# Terminal 2  
+cd ~/project-b
+opencodebox --mount-rw
+```
+
+### Container Naming
+
+**Consistent Naming for GitCheckout**
+- Container name: `opencode-box-<project>-<path-hash>`
+- Reusable across sessions
+- Example: `opencode-box-my-app-a1b2c3d4`
+
+**Unique Naming for Mount Modes**
+- Container name: `opencode-box-<project>-<path-hash>-<timestamp>`
+- Multiple instances allowed
+- Example: `opencode-box-my-app-a1b2c3d4-1699123456789`
+
+## 📋 Command Reference
+
+### Modes (exactly one required)
+
+| Mode | Description | SSH Required | Interactive | Container Name |
+|-------|-------------|--------------|------------|----------------|
+| `--gitcheckout` | Clone repository inside container | ✅ Yes | ✅ Yes | `opencode-box-<project>-<hash>` |
+| `--mount-ro` | Mount workspace as read-only | ❌ No | ❌ No | `opencode-box-<project>-<hash>-<timestamp>` |
+| `--mount-rw` | Mount workspace as read-write | ❌ No | ❌ No | `opencode-box-<project>-<hash>-<timestamp>` |
+
+### Options
+
+| Option | Description | Usage |
+|---------|-------------|-------|
+| `--it` | Get interactive shell in existing gitcheckout container | `opencodebox --gitcheckout --it` |
+| `--rebuild` | Force rebuild Docker image (removes existing) | `opencodebox --gitcheckout --rebuild` |
+| `--help, -h` | Show help message | `opencodebox --help` |
+| `--version, -v` | Show version information | `opencodebox --version` |
+
+### Usage Examples
+
+```bash
+# Basic usage
+opencodebox --gitcheckout
+
+# Read-only examination
+opencodebox --mount-ro
+
+# Direct editing
+opencodebox --mount-rw
+
+# Force rebuild with latest dependencies
+opencodebox --gitcheckout --rebuild
+
+# Get shell in running container
+opencodebox --gitcheckout --it
+
+# Multiple mount instances
+opencodebox --mount-ro &  # Terminal 1
+opencodebox --mount-rw      # Terminal 2
+
+# Rebuild and mount
+opencodebox --mount-ro --rebuild
+```
+
 ## 📋 System Requirements
 
 ### Required Dependencies
@@ -41,9 +160,16 @@ npm install -g opencode-box
 - **Git**: v2.25.0 or higher (configured on host machine)
 
 ### Authentication Requirements
+
+**For `--gitcheckout` mode:**
 - **SSH Agent**: Must be running with Git credentials loaded
 - **Git Configuration**: User name and email configured globally
-- **Repository Access**: Valid SSH key or credentials for the target repository
+- **Repository Access**: Valid SSH key or credentials for target repository
+
+**For `--mount-ro` and `--mount-rw` modes:**
+- **No SSH Requirements**: Works with any local Git repository
+- **Git Repository**: Must be run from inside a Git project
+- **File System**: Direct access to your workspace files
 
 ### Optional but Recommended
 - **OpenCode CLI**: Pre-installed on host machine for easier authentication setup
@@ -158,8 +284,36 @@ ls -la ~/.config/opencode
 ls -la ~/.local/share/opencode
 ```
 
+**Container Not Found for `--it` Flag:**
+```bash
+# Error when trying to get shell in non-existent container
+opencodebox --gitcheckout --it
+# Solution: Start container first
+opencodebox --gitcheckout
+```
+
+**Multiple Container Name Conflicts:**
+```bash
+# Check running containers with same project
+docker ps --filter "name=opencode-box-my-project"
+# Solution: Use different timestamps or stop existing container
+docker stop opencode-box-my-project-a1b2c3d4
+```
+
+**Mount Mode Permission Issues:**
+```bash
+# Check file permissions on mounted workspace
+ls -la /path/to/your/project
+# Solution: Ensure proper ownership and permissions
+sudo chown -R $USER:$USER /path/to/your/project
+```
+
 ## 🚧 Roadmap
 
+- [x] **Workspace Modes**: Implemented `--mount-ro`, `--mount-rw`, `--gitcheckout` modes
+- [x] **Container Management**: Smart naming with project-based identifiers
+- [x] **Interactive Shell Access**: `--it` flag for existing gitcheckout containers
+- [x] **Resource Optimization**: Conditional TTY allocation and SSH mounting
 - [ ] **Volume Mounting**: Mount specific local folders with absolute paths for document/image sharing
 - [ ] **Multi-Platform Support**: Enhanced support for Windows and Linux environments
 - [ ] **Performance Optimization**: Faster container startup and build times
